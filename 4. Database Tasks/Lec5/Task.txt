@@ -1,0 +1,5 @@
+The differences between the primary key and Unique not null is that :
+
+Primary key can be defined only once on one of the columns, unique not null can be defined on multiple columns within the table.
+
+Primary key is unique identifier for the row, unique not null is identifier for the value within single column.
