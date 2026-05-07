@@ -10,7 +10,7 @@ public interface ItemRepo {
     ResultSet getAllItems() throws SQLException;
     ResultSet getItemById(long id);
 
-    ResultSet addItem(Item item);
+    void addItem(Item item);
 
     ResultSet updateItem(Item item);
 

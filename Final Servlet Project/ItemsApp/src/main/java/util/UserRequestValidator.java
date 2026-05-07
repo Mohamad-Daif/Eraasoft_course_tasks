@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 
 public class UserRequestValidator {
 
-    public static void validateSignupRequest(HttpServletRequest request){
+    public static void validateSignupRequest(HttpServletRequest request)throws MissingMandatoryField{
         if (
                 request.getParameter(ConstantValues.USERNAME) == null ||
                         request.getParameter(ConstantValues.PASSWORD) == null) {

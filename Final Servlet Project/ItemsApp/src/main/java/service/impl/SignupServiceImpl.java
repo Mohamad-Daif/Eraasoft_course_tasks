@@ -1,6 +1,7 @@
 package service.impl;
 
 import constant.ConstantValues;
+import exception.MissingMandatoryField;
 import repo.user.UserRepo;
 import repo.user.UserRepoImpl;
 import service.SignupService;
@@ -14,7 +15,7 @@ public class SignupServiceImpl implements SignupService {
     UserRepo userRepo = new UserRepoImpl();
 
     @Override
-    public void signup(HttpServletRequest request) throws SQLException {
+    public void signup(HttpServletRequest request) throws SQLException, MissingMandatoryField {
 
         UserRequestValidator.validateSignupRequest(request);
 

@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class QueryExecuter {
 
-    public static ResultSet executeQuery(String query) {
+    public static ResultSet executeQueryWithResultSet(String query) {
 
         try {
             PreparedStatement pstmt = DBConfig.getConnection().prepareStatement(query);
@@ -19,6 +19,24 @@ public class QueryExecuter {
             ResultSet resultSet = pstmt.executeQuery();
 
             return resultSet;
+        } catch (SQLException e) {
+            throw new InternalServerError(
+                    new ExceptionModel(
+                            e.getMessage(),
+                            500
+                    )
+            );
+        }
+    }
+
+    public static void executeQueryWithoutResultSet(String query) {
+
+        try {
+            PreparedStatement pstmt = DBConfig.getConnection().prepareStatement(query);
+
+            // Step 4: Execute
+            pstmt.execute();
+
         } catch (SQLException e) {
             throw new InternalServerError(
                     new ExceptionModel(

@@ -21,6 +21,7 @@ public class LoginController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             loginService.login(req);
+            System.out.println("User logged in successfully");
         } catch (SQLException e) {
             ErrorHandler.forwardToErrorPage(req, resp, e.getMessage(), 404);
         }

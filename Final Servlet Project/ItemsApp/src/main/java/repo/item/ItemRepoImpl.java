@@ -12,17 +12,17 @@ public class ItemRepoImpl implements ItemRepo {
     @Override
     public ResultSet getAllItems() throws SQLException {
         String getAllItemsQuery = "SELECT * FROM item";
-        return QueryExecuter.executeQuery(getAllItemsQuery);
+        return QueryExecuter.executeQueryWithResultSet(getAllItemsQuery);
     }
 
     @Override
     public ResultSet getItemById(long id) {
         String getItemByIdQuery = String.format("SELECT * FROM item WHERE id = %d", id);
-        return QueryExecuter.executeQuery(getItemByIdQuery);
+        return QueryExecuter.executeQueryWithResultSet(getItemByIdQuery);
     }
 
     @Override
-    public ResultSet addItem(Item item) {
+    public void addItem(Item item) {
 
         String addNewItemQuery = String.format("INSERT INTO item (%s,%s,%s) values(%s,%.2f,%d)",
                 DBConstant.NAME_COL,
@@ -33,7 +33,7 @@ public class ItemRepoImpl implements ItemRepo {
                 item.getTotalNumber()
         );
 
-        return QueryExecuter.executeQuery(addNewItemQuery);
+        QueryExecuter.executeQueryWithoutResultSet(addNewItemQuery);
     }
 
     @Override

@@ -5,5 +5,5 @@ import java.sql.ResultSet;
 public interface UserRepo {
 
     ResultSet login(String username, String password);
-    ResultSet signup(String username, String password);
+    void signup(String username, String password);
 }

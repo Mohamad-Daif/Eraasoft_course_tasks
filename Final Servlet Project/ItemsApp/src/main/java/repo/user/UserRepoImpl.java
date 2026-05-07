@@ -12,12 +12,12 @@ public class UserRepoImpl implements UserRepo{
                 "SELECT id,username,password from users where username = '%s' and password = '%s'"
                 ,username
                 ,password);
-        return QueryExecuter.executeQuery(getUserQueryByUsernameAndPassword);
+        return QueryExecuter.executeQueryWithResultSet(getUserQueryByUsernameAndPassword);
     }
 
     @Override
-    public ResultSet signup(String username, String password) {
+    public void signup(String username, String password) {
         String insertNewUserQuery = String.format("INSERT INTO USERS(username,password) values('%s','%s')", username, password);
-        return QueryExecuter.executeQuery(insertNewUserQuery);
+        QueryExecuter.executeQueryWithoutResultSet(insertNewUserQuery);
     }
 }
