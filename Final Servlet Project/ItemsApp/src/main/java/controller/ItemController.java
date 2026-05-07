@@ -1,7 +1,7 @@
 package controller;
 
 import constant.ConstantValues;
-import exception.ExceptionModel;
+import exception.ErrorHandler;
 import exception.ItemNotFound;
 import service.ItemService;
 import service.impl.ItemServiceImpl;
@@ -37,12 +37,12 @@ public class ItemController extends HttpServlet {
                     try {
                         response.getWriter().write(item.toString());
                     } catch (IOException e) {
-                        forwardToErrorPage(request, response, e.getMessage(), 500);
+                        ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
                     }
 
                 });
             } catch (SQLException e) {
-                forwardToErrorPage(request, response, e.getMessage(), 500);
+                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
             }
             return;
         }
@@ -56,9 +56,9 @@ public class ItemController extends HttpServlet {
             try {
                 response.getWriter().write(itemService.getItemById(id).toString());
             } catch (SQLException e) {
-                forwardToErrorPage(request, response, e.getMessage(), 500);
+                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
             } catch (ItemNotFound e) {
-                forwardToErrorPage(request, response, e.getMessage(), 404);
+                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 404);
             }
         }
     }
@@ -76,19 +76,5 @@ public class ItemController extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         super.doPut(req, resp);
-    }
-
-    private void forwardToErrorPage(HttpServletRequest request, HttpServletResponse response, String message, int code) {
-        // Forward to error page with exception data
-        request.setAttribute(ConstantValues.STATUS_CODE_ATTR, code);
-        request.setAttribute(ConstantValues.MESSAGE_ATTR, message);
-
-        // Forward keeps the URL, user sees clean error page
-        try {
-            request.getRequestDispatcher(ConstantValues.ERROR_PAGE_PATH).forward(request, response);
-        } catch (ServletException | IOException e) {
-            throw new RuntimeException(e);
-        }
-
     }
 }

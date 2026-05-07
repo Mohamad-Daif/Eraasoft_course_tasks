@@ -1,8 +1,11 @@
 package service;
 
+import model.User;
+
 import javax.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
 
 public interface LoginService {
 
-    void login(HttpServletRequest request);
+    User login(HttpServletRequest request) throws SQLException;
 }

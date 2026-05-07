@@ -1,4 +1,4 @@
-package repo;
+package repo.item;
 
 import model.Item;
 

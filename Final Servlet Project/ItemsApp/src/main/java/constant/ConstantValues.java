@@ -7,5 +7,8 @@ public class ConstantValues {
     public static final String TOTAL_NUMBER_PARAM = "totalNumber";
     public static final String STATUS_CODE_ATTR = "statusCode";
     public static final String MESSAGE_ATTR = "message";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
     public static final String ERROR_PAGE_PATH = "/error.jsp";
+
 }

@@ -10,8 +10,8 @@ import exception.ExceptionModel;
 import exception.ItemNotFound;
 import mapper.ResultSetMapper;
 import model.Item;
-import repo.ItemRepo;
-import repo.ItemRepoImpl;
+import repo.item.ItemRepo;
+import repo.item.ItemRepoImpl;
 import service.ItemService;
 import util.ItemRequestValidator;
 
