@@ -19,5 +19,6 @@ public class DBConstant {
     public static final String ITEM_DETAILS_TABLE_NAME = "itemDetails";
     public static final String USERS_TABLE_NAME = "users";
     public static final String ITEM_TABLE_NAME = "item";
+    public static final String ITEM_SCHEMA_NAME = "itemschema";
 
 }

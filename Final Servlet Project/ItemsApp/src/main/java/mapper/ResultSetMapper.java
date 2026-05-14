@@ -33,12 +33,12 @@ public class ResultSetMapper {
         return user;
     }
 
-    public static ItemDetails  mapResultSetToItemDetails(ResultSet resultSet) throws SQLException {
+    public static ItemDetails mapResultSetToItemDetails(ResultSet resultSet) throws SQLException {
         ItemDetails itemDetail = new ItemDetails();
-        itemDetail.setItemId(resultSet.getLong(ID_COL));
+        itemDetail.setItemId(resultSet.getLong(ITEM_ID_COL));
         itemDetail.setDescription(resultSet.getString(DESCRIPTION_COL));
-        itemDetail.setIssuedAt(resultSet.getDate(ISSUED_AT_COL));
-        itemDetail.setExpiredAt(resultSet.getDate(EXPIRED_AT_COL));
+        itemDetail.setIssuedAt(resultSet.getDate(ISSUED_AT_COL).toLocalDate());
+        itemDetail.setExpiredAt(resultSet.getDate(EXPIRED_AT_COL).toLocalDate());
         return itemDetail;
     }
 }
