@@ -1,64 +1,52 @@
 package service.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.google.gson.Gson;
 import constant.ConstantValues;
-import exception.ExceptionModel;
-import exception.ItemNotFound;
-import mapper.ResultSetMapper;
 import model.Item;
-import repo.item.ItemRepo;
-import repo.item.ItemRepoImpl;
+import repo.ItemRepo;
+import repo.impl.ItemRepoImpl;
 import service.ItemService;
 import util.ItemRequestValidator;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 
 public class ItemServiceImpl implements ItemService {
 
-    ItemRepo itemRepo = new ItemRepoImpl();
-    ResultSetMapper resultSetMapper = new ResultSetMapper();
+    private HttpServletRequest httpRequest;
+    private Long userId;
+
+    @Override
+    public void setHttpRequest(HttpServletRequest httpRequest) {
+        this.httpRequest = httpRequest;
+        userId = (Long) httpRequest.getSession().getAttribute(ConstantValues.USER_ID_ATTR);
+    }
+    private ItemRepo itemRepo = new ItemRepoImpl();
+    private Gson gson = new Gson();
 
     @Override
     public List<Item> getAllItem() throws SQLException {
-        ResultSet resultSet = itemRepo.getAllItems();
-        List<Item> items = new ArrayList<>();
-        while (resultSet.next()) {
-            items.add(resultSetMapper.mapResultSetToItem(resultSet));
-        }
-        resultSet.close();
-        return items;
+        return itemRepo.getAllItems(userId);
     }
 
     @Override
-    public Item getItemById(int id) throws SQLException {
-        ResultSet resultSet = itemRepo.getItemById(id);
-        Item item = null;
-        if (!resultSet.next()) {
-            throw new ItemNotFound(new ExceptionModel("There is no item with id : " + id, 404));
-        } else {
-            while (resultSet.next()) {
-                item = resultSetMapper.mapResultSetToItem(resultSet);
-            }
-            resultSet.close();
-            return item;
-        }
+    public Item getItemById(long itemId) throws SQLException {
+        return itemRepo.getItemById(userId, itemId);
     }
 
     @Override
-    public void addItem(HttpServletRequest request) {
+    public void addItem(HttpServletRequest request) throws IOException {
 
-        ItemRequestValidator.validatePostItemRequest(request);
+        Item addedItem = gson.fromJson(request.getReader(), Item.class);
 
-        Item item = new Item();
-        item.setName(request.getParameter(ConstantValues.NAME_PARAM));
-        item.setPrice(Double.valueOf(request.getParameter(ConstantValues.PRICE_PARAM)));
-        item.setTotalNumber(Integer.valueOf(request.getParameter(ConstantValues.TOTAL_NUMBER_PARAM)));
+        addedItem.setUserId((Long) httpRequest.getSession().getAttribute(ConstantValues.USER_ID_ATTR));
+        addedItem.setDeleted(false);
 
-        itemRepo.addItem(item);
+        ItemRequestValidator.validatePostItemRequest(addedItem);
+
+        itemRepo.addItem(addedItem);
     }
 
     @Override

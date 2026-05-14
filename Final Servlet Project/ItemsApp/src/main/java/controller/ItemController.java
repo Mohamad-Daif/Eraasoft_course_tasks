@@ -1,8 +1,8 @@
 package controller;
 
+import com.google.gson.Gson;
 import constant.ConstantValues;
-import exception.ErrorHandler;
-import exception.ItemNotFound;
+import model.Item;
 import service.ItemService;
 import service.impl.ItemServiceImpl;
 
@@ -13,68 +13,128 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 @WebServlet("/item/*")
 public class ItemController extends HttpServlet {
 
-    ItemService itemService = new ItemServiceImpl();
+
+    private ItemService itemService = new ItemServiceImpl();
+    private Gson gson = new Gson();
+    private String jsonContentType = "application/json";
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        response.setContentType("application/json; charset=UTF-8");
+        itemService.setHttpRequest(request);
 
-        // Get the path info after /item/
         String pathInfo = request.getPathInfo();
 
-        /**
-         * In case the url is null or end with /, which means that it is /item, so get all items
-         * else it means that you get by id.
-         */
+        // /item or /item/ → show all items for logged-in user
         if (pathInfo == null || pathInfo.equals("/")) {
-            try {
-                itemService.getAllItem().forEach(item -> {
-                    try {
-                        response.getWriter().write(item.toString());
-                    } catch (IOException e) {
-                        ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
-                    }
-
-                });
-            } catch (SQLException e) {
-                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
-            }
-            return;
-        }
-
-        // Remove the leading slash
-        String idOrName = pathInfo.substring(1);
-
-        if (idOrName.matches("\\d+")) {
-            // Search by ID
-            int id = Integer.parseInt(idOrName);
-            try {
-                response.getWriter().write(itemService.getItemById(id).toString());
-            } catch (SQLException e) {
-                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 500);
-            } catch (ItemNotFound e) {
-                ErrorHandler.forwardToErrorPage(request, response, e.getMessage(), 404);
-            }
+            handleGetAllItemsRequest(request, response);
+        } else {
+            handleGetItemByIdRequest(request, response);
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        itemService.setHttpRequest(req);
+
         itemService.addItem(req);
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doDelete(req, resp);
+    private void returnItemsOfPreLoggedInUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        List<Item> items = (List<Item>) request.getSession().getAttribute(ConstantValues.ITEMS_ATTR);
+
+        response.setContentType(jsonContentType);
+
+        response.getWriter().write(gson.toJson(items));
     }
 
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doPut(req, resp);
+    private void handleGetItemByIdRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        String itemIdPathParam = request.getPathInfo().substring(1);
+
+        if (itemIdPathParam.matches("\\d+")) {
+
+            int itemId = Integer.parseInt(itemIdPathParam);
+
+            if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null
+                    && request.getSession().getAttribute(ConstantValues.ITEMS_ATTR) != null) {
+
+                // /item/{id} → single item (API or detail view)
+                List<Item> items = (List<Item>) request.getSession().getAttribute(ConstantValues.ITEMS_ATTR);
+                items
+                        .stream()
+                        .filter(itm -> itm.getId() == itemId)
+                        .findFirst()
+                        .ifPresent(foundItem -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.setContentType(jsonContentType);
+                            try {
+                                response.getWriter().write(gson.toJson(foundItem));
+                                return;
+                            } catch (IOException e) {
+                                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                                throw new RuntimeException(e);
+                            }
+                        });
+            } else if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null) {
+                try {
+
+                    Item foundItem = itemService.getItemById(itemId);
+
+                    if (foundItem != null) {
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        response.setContentType(jsonContentType);
+                        response.getWriter().write(gson.toJson(foundItem));
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            }
+        } else {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/text");
+            response.getWriter().write("item id must be integer value");
+        }
+    }
+
+    private void handleGetAllItemsRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null
+                && request.getSession().getAttribute(ConstantValues.ITEMS_ATTR) != null) {
+            System.out.println("Return items that are already loaded.");
+            returnItemsOfPreLoggedInUser(request, response);
+
+        } else if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null) {
+            try {
+                System.out.println("Fetch items for user who logged in only.");
+                handleGetAllItemsRequestForLoggedUserWhichItemsAreNotStoredInSession(request, response);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
+
+    private void handleGetAllItemsRequestForLoggedUserWhichItemsAreNotStoredInSession(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
+
+        long userId = (Long) request.getSession().getAttribute(ConstantValues.USER_ID_ATTR);
+        List<Item> items = itemService.getAllItem();
+
+        response.setContentType(jsonContentType);
+        request.getSession().setAttribute(ConstantValues.ITEMS_ATTR, items);
+
+        response.getWriter().write(gson.toJson(items));
     }
 }

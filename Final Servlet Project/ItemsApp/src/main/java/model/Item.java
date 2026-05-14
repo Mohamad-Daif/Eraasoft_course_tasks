@@ -2,35 +2,38 @@ package model;
 
 public class Item {
 
-	private int id;
+	private Long id;
 	
 	private String name;
 	
-	private double price;
-	
-	private int totalNumber;
+	private Double price;
+
+	private Integer totalNumber;
+
+	private Boolean isDeleted;
+
+	private Long userId;
+
+	@Override
+	public String toString() {
+		return "{" +
+				"id=" + id +
+				", name='" + name + '\'' +
+				", price=" + price +
+				", totalNumber=" + totalNumber +
+				", isDeleted=" + isDeleted +
+				", userId=" + userId +
+				'}';
+	}
 
 	public Item() {
-		
-	}
-	public Item(String name, double price, int totalNumber) {
-		this.name = name;
-		this.price = price;
-		this.totalNumber = totalNumber;
-	}
-	
-	public Item(int id, String name, double price, int totalNumber) {
-		this.id = id;
-		this.name = name;
-		this.price = price;
-		this.totalNumber = totalNumber;
 	}
 
-	public int getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
@@ -42,29 +45,44 @@ public class Item {
 		this.name = name;
 	}
 
-	public double getPrice() {
+	public Double getPrice() {
 		return price;
 	}
 
-	public void setPrice(double price) {
+	public void setPrice(Double price) {
 		this.price = price;
 	}
 
-	public int getTotalNumber() {
+	public Integer getTotalNumber() {
 		return totalNumber;
 	}
 
-	public void setTotalNumber(int totalNumber) {
+	public void setTotalNumber(Integer totalNumber) {
 		this.totalNumber = totalNumber;
 	}
 
-	@Override
-	public String toString() {
-		return "{" +
-				"id=" + id +
-				", name='" + name + '\'' +
-				", price=" + price +
-				", totalNumber=" + totalNumber +
-				'}';
+	public Boolean getDeleted() {
+		return isDeleted;
+	}
+
+	public void setDeleted(Boolean deleted) {
+		isDeleted = deleted;
+	}
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
+
+	public Item(Long id, String name, Double price, Integer totalNumber, Boolean isDeleted, Long userId) {
+		this.id = id;
+		this.name = name;
+		this.price = price;
+		this.totalNumber = totalNumber;
+		this.isDeleted = isDeleted;
+		this.userId = userId;
 	}
 }
