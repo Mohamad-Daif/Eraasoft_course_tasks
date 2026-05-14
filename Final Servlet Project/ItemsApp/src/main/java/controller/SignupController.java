@@ -1,6 +1,7 @@
 package controller;
 
 import exception.ErrorHandler;
+import exception.MissingMandatoryField;
 import service.SignupService;
 import service.impl.SignupServiceImpl;
 
@@ -21,9 +22,10 @@ public class SignupController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             signupService.signup(req);
-            System.out.println("User registered successfully");
-        } catch (SQLException e) {
-            ErrorHandler.forwardToErrorPage(req, resp, e.getMessage(), 404);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException | MissingMandatoryField | IOException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().println(e.getMessage());
         }
     }
 }

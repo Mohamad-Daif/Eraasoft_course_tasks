@@ -1,6 +1,5 @@
 package controller;
 
-import exception.ErrorHandler;
 import service.LoginService;
 import service.impl.LoginServiceImpl;
 
@@ -20,10 +19,11 @@ public class LoginController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            loginService.login(req);
-            System.out.println("User logged in successfully");
-        } catch (SQLException e) {
-            ErrorHandler.forwardToErrorPage(req, resp, e.getMessage(), 404);
+            loginService.login(req,resp);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException | IOException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().println(e.getMessage());
         }
     }
 }
