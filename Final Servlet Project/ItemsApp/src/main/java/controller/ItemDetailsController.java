@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-@WebServlet("/itemDetails/*")
+@WebServlet("/itemdetails/*")
 public class ItemDetailsController extends HttpServlet {
 
     // used this gson builder to allow gson to be aware with how to convert String date received within request body to local date
@@ -35,10 +35,14 @@ public class ItemDetailsController extends HttpServlet {
             Long itemDetailId = Long.parseLong(itemDetailIdPathParam);
             try {
                 ItemDetails itemDetails = itemDetailsService.getItemDetails(itemDetailId);
-
-                resp.setContentType("application/json");
-                resp.getWriter().write(gson.toJson(itemDetails));
-                resp.setStatus(HttpServletResponse.SC_OK);
+                if (itemDetails != null) {
+                    resp.setContentType("application/json");
+                    resp.getWriter().write(gson.toJson(itemDetails));
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    resp.getWriter().write("Item not found");
+                }
 
             } catch (SQLException e) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

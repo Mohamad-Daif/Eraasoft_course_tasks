@@ -1,14 +1,9 @@
 package exception;
 
-public class MissingMandatoryField extends RuntimeException{
-    ExceptionModel exceptionModel;
+public class MissingMandatoryField extends RuntimeException {
 
-    public MissingMandatoryField(ExceptionModel model) {
-        super(model.getMessage());
-        exceptionModel = model;
+    public MissingMandatoryField() {
+        super("Missing mandatory Field");
     }
 
-    public ExceptionModel getExceptionModel() {
-        return exceptionModel;
-    }
 }

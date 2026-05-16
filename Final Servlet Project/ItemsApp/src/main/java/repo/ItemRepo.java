@@ -13,9 +13,8 @@ public interface ItemRepo {
 
     void addItem(Item item);
 
-    ResultSet updateItem(Item item);
+    void updateItem(Item item) throws SQLException;
 
-    ResultSet deleteItem(String name);
-    ResultSet deleteItemById(long id);
+    void deleteItemById(long id) throws SQLException;
 
 }

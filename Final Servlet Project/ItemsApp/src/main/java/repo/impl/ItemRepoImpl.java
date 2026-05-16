@@ -1,7 +1,6 @@
 package repo.impl;
 
 import config.DBConfig;
-import exception.ExceptionModel;
 import exception.InternalServerError;
 import mapper.ResultSetMapper;
 import model.Item;
@@ -24,7 +23,11 @@ public class ItemRepoImpl implements ItemRepo {
         List<Item> items = new ArrayList<>();
 
         try (Connection connection = DBConfig.getConnection()) {
-            String getAllItemsQuery = String.format("SELECT * FROM itemschema.item where %s = ?", USER_ID_COL);
+            String getAllItemsQuery = String.format("SELECT * FROM %s.%s where %s = ?"
+                    , ITEM_SCHEMA_NAME
+                    , ITEM_TABLE_NAME
+                    , USER_ID_COL
+            );
 
             PreparedStatement pstmt = connection.prepareStatement(getAllItemsQuery);
 
@@ -40,12 +43,7 @@ public class ItemRepoImpl implements ItemRepo {
             return items;
 
         } catch (SQLException e) {
-            throw new InternalServerError(
-                    new ExceptionModel(
-                            e.getMessage(),
-                            500
-                    )
-            );
+            throw new InternalServerError();
         }
     }
 
@@ -54,7 +52,9 @@ public class ItemRepoImpl implements ItemRepo {
         try (Connection connection = DBConfig.getConnection()) {
 
             String getItemByIdQuery = String.format(
-                    "SELECT * FROM itemschema.item WHERE %s = ? and %s = ?",
+                    "SELECT * FROM %s.%s WHERE %s = ? and %s = ?",
+                    ITEM_SCHEMA_NAME,
+                    ITEM_TABLE_NAME,
                     USER_ID_COL,
                     ID_COL);
 
@@ -73,19 +73,14 @@ public class ItemRepoImpl implements ItemRepo {
             return item;
 
         } catch (SQLException e) {
-            throw new InternalServerError(
-                    new ExceptionModel(
-                            e.getMessage(),
-                            500
-                    )
-            );
+            throw new InternalServerError();
         }
     }
 
     @Override
     public void addItem(Item item) {
 
-        try(Connection connection = DBConfig.getConnection()){
+        try (Connection connection = DBConfig.getConnection()) {
             String addNewItemQuery = String.format(
                     "INSERT INTO item (%s,%s,%s,%s,%s) values(?,?,?,?,?)"
                     , NAME_COL
@@ -97,35 +92,60 @@ public class ItemRepoImpl implements ItemRepo {
             PreparedStatement pstmt = connection.prepareStatement(addNewItemQuery);
             pstmt.setString(1, item.getName());
             pstmt.setDouble(2, item.getPrice());
-            pstmt.setInt(3,item.getTotalNumber());
+            pstmt.setInt(3, item.getTotalNumber());
             pstmt.setBoolean(4, item.getDeleted());
             pstmt.setLong(5, item.getUserId());
 
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
-            throw new InternalServerError(
-                    new ExceptionModel(
-                            e.getMessage(),
-                            500
-                    )
-            );
+            throw new InternalServerError();
         }
     }
 
     @Override
-    public ResultSet updateItem(Item item) {
-        return null;
+    public void updateItem(Item item) throws SQLException {
+        String updateItemQuery = String.format(
+                "Update %s.%s SET %s=?,%s = ?,%s = ? , %s=? where %s = ?"
+                , ITEM_SCHEMA_NAME
+                , ITEM_TABLE_NAME
+                , NAME_COL
+                , PRICE_COL
+                , TOTAL_NUM_COL
+                , IS_DELETED_COL
+                , ID_COL);
+
+        try (Connection connection = DBConfig.getConnection()) {
+
+            PreparedStatement pstmt = connection.prepareStatement(updateItemQuery);
+
+            pstmt.setString(1, item.getName());
+            pstmt.setDouble(2, item.getPrice());
+            pstmt.setInt(3, item.getTotalNumber());
+            pstmt.setBoolean(4, item.getDeleted());
+            pstmt.setLong(5, item.getId());
+
+            pstmt.executeUpdate();
+
+            pstmt.close();
+        }
     }
 
     @Override
-    public ResultSet deleteItem(String name) {
-        return null;
-    }
+    public void deleteItemById(long id) throws SQLException {
+        String deleteItemByIdQuery = String.format(
+                "DELETE from %s.%s where %s = ?",
+                ITEM_SCHEMA_NAME,
+                ITEM_TABLE_NAME,
+                ID_COL
+        );
 
-    @Override
-    public ResultSet deleteItemById(long id) {
-        return null;
+        try (Connection connection = DBConfig.getConnection()) {
+            PreparedStatement pstmt = connection.prepareStatement(deleteItemByIdQuery);
+            pstmt.setLong(1, id);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
     }
 
 }

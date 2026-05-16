@@ -2,14 +2,8 @@ package exception;
 
 public class ItemNotFound extends RuntimeException {
 
-    ExceptionModel exceptionModel;
-
-    public ItemNotFound(ExceptionModel model) {
-        super(model.getMessage());
-        exceptionModel = model;
+    public ItemNotFound() {
+        super("Item not found");
     }
 
-    public ExceptionModel getExceptionModel() {
-        return exceptionModel;
-    }
 }

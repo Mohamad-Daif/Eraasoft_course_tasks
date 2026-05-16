@@ -27,8 +27,6 @@ public class ItemController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        itemService.setHttpRequest(request);
-
         String pathInfo = request.getPathInfo();
 
         // /item or /item/ → show all items for logged-in user
@@ -42,10 +40,36 @@ public class ItemController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        itemService.setHttpRequest(req);
+        try {
+            itemService.addItem(req);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
 
-        itemService.addItem(req);
-        resp.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        try {
+            itemService.updateItemById(req, resp);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        try {
+            itemService.removeItemById(req);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 
     private void returnItemsOfPreLoggedInUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -87,7 +111,7 @@ public class ItemController extends HttpServlet {
             } else if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null) {
                 try {
 
-                    Item foundItem = itemService.getItemById(itemId);
+                    Item foundItem = itemService.getItemById(request);
 
                     if (foundItem != null) {
                         response.setStatus(HttpServletResponse.SC_OK);
@@ -112,12 +136,10 @@ public class ItemController extends HttpServlet {
     private void handleGetAllItemsRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null
                 && request.getSession().getAttribute(ConstantValues.ITEMS_ATTR) != null) {
-            System.out.println("Return items that are already loaded.");
             returnItemsOfPreLoggedInUser(request, response);
 
         } else if (request.getSession().getAttribute(ConstantValues.USER_ID_ATTR) != null) {
             try {
-                System.out.println("Fetch items for user who logged in only.");
                 handleGetAllItemsRequestForLoggedUserWhichItemsAreNotStoredInSession(request, response);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -130,11 +152,12 @@ public class ItemController extends HttpServlet {
     private void handleGetAllItemsRequestForLoggedUserWhichItemsAreNotStoredInSession(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
         long userId = (Long) request.getSession().getAttribute(ConstantValues.USER_ID_ATTR);
-        List<Item> items = itemService.getAllItem();
+        List<Item> items = itemService.getAllItem(request);
 
         response.setContentType(jsonContentType);
         request.getSession().setAttribute(ConstantValues.ITEMS_ATTR, items);
 
         response.getWriter().write(gson.toJson(items));
     }
+
 }

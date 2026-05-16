@@ -10,10 +10,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public interface ItemService {
-	void setHttpRequest(HttpServletRequest req);
-	List<Item> getAllItem() throws SQLException;
-	Item getItemById(long itemId) throws SQLException;
-	void addItem(HttpServletRequest httpRequest) throws IOException;
-	void updateItemById(HttpServletRequest httpRequest);
-	void removeItemById(HttpServletRequest request);
+	List<Item> getAllItem(HttpServletRequest request) throws SQLException;
+	Item getItemById(HttpServletRequest request) throws SQLException;
+	void addItem(HttpServletRequest httpRequest) throws IOException, SQLException;
+	void updateItemById(HttpServletRequest httpRequest,HttpServletResponse httpResponse) throws IOException, SQLException;
+	void removeItemById(HttpServletRequest request) throws SQLException;
 }
