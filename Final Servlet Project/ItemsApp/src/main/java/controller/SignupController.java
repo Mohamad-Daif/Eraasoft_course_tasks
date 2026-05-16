@@ -1,6 +1,5 @@
 package controller;
 
-import exception.ErrorHandler;
 import exception.MissingMandatoryField;
 import service.SignupService;
 import service.impl.SignupServiceImpl;

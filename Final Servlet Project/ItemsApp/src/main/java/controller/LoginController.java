@@ -19,11 +19,12 @@ public class LoginController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            loginService.login(req,resp);
+            loginService.login(req, resp);
             resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (RuntimeException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         } catch (SQLException | IOException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().println(e.getMessage());
         }
     }
 }

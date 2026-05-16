@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static constant.DBConstant.*;
+
 public class UserRepoImpl implements UserRepo {
 
     @Override
@@ -17,7 +19,16 @@ public class UserRepoImpl implements UserRepo {
 
         try (Connection connection = DBConfig.getConnection()) {
 
-            String query = "SELECT * from itemschema.users where username = ? and password = ?";
+            String query = String.format(
+                    "SELECT %s,%s,%s from %s.%s where %s = ? and %s = ?",
+                    ID_COL,
+                    USER_NAME_COL,
+                    PASSWORD_COL,
+                    ITEM_SCHEMA_NAME,
+                    USERS_TABLE_NAME,
+                    USER_NAME_COL,
+                    PASSWORD_COL
+            );
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
 
@@ -34,7 +45,13 @@ public class UserRepoImpl implements UserRepo {
     @Override
     public void signup(String username, String password) throws SQLException {
       try(Connection connection = DBConfig.getConnection()) {
-          String query = "INSERT INTO itemschema.users(username,password) values(?,?)";
+          String query = String.format(
+                  "INSERT INTO %s.%s(%s,%s) values(?,?)",
+                  ITEM_SCHEMA_NAME,
+                  USERS_TABLE_NAME,
+                  USER_NAME_COL,
+                  PASSWORD_COL
+          );
 
           PreparedStatement preparedStatement = connection.prepareStatement(query);
           preparedStatement.setString(1, username);

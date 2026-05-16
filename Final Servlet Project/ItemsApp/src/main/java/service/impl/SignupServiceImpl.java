@@ -23,11 +23,11 @@ public class SignupServiceImpl implements SignupService {
 
         User user = gson.fromJson(request.getReader(),User.class);
 
-        UserRequestValidator.validateSignupRequest(request);
+        UserRequestValidator.validateSignupRequest(user);
 
         userRepo.signup(
-                request.getParameter(ConstantValues.USERNAME),
-                request.getParameter(ConstantValues.PASSWORD)
+                user.getUsername(),
+                user.getPassword()
         );
     }
 }

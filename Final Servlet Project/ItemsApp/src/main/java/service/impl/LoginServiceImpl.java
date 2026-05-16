@@ -2,6 +2,7 @@ package service.impl;
 
 import com.google.gson.Gson;
 import constant.ConstantValues;
+import exception.UserNotFoundException;
 import model.User;
 import repo.UserRepo;
 import repo.impl.UserRepoImpl;
@@ -21,12 +22,16 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public User login(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
-        User user = gson.fromJson(request.getReader(), User.class);
+        User receivedUser = gson.fromJson(request.getReader(), User.class);
 
-        user = userRepo.login(
-                user.getUsername(),
-                user.getPassword()
+        User user = userRepo.login(
+                receivedUser.getUsername(),
+                receivedUser.getPassword()
         );
+
+        if (user.getId() == null) {
+            throw new UserNotFoundException();
+        }
 
         HttpSession session = request.getSession();
 
