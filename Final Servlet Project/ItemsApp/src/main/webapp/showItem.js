@@ -121,7 +121,6 @@ async function fetchItemDetails(itemId) {
         });
 
         if (!response.ok) {
-            // If 404, it means details don't exist yet
             if (response.status === 404) {
                 return null;
             }
@@ -137,6 +136,7 @@ async function fetchItemDetails(itemId) {
         return null;
     }
 }
+
 // Render items
 function renderItems(itemsToRender) {
     const grid = document.getElementById('itemsGrid');
@@ -215,7 +215,6 @@ async function toggleDetails(itemId, toggleEl) {
         toggleEl.classList.add('open');
         toggleEl.querySelector('span').textContent = 'Hide Details';
 
-        // Load details if not cached
         const details = await fetchItemDetails(itemId);
         const grid = document.getElementById(`details-grid-${itemId}`);
 
@@ -269,14 +268,12 @@ async function deleteItem(itemId) {
 
         if (response.ok) {
             showToast('Item deleted successfully', 'success');
-            // Remove from UI
             const card = document.getElementById(`item-${itemId}`);
             if (card) {
                 card.style.transform = 'scale(0.9)';
                 card.style.opacity = '0';
                 setTimeout(() => {
                     card.remove();
-                    // Refresh stats
                     const activeItems = items.filter(i => i.id !== itemId && !i.isDeleted);
                     updateStats(activeItems);
                     if (activeItems.length === 0) {
@@ -318,20 +315,31 @@ async function submitUpdate() {
         return;
     }
 
+    // Get the existing item to preserve userId and other fields
+    const existingItem = items.find(i => i.id === itemId);
+    if (!existingItem) {
+        showToast('Item not found', 'error');
+        return;
+    }
+
     try {
-        const response = await fetchWithSession(`http://localhost:8080/item/${itemId}`, {
+        // PUT to /item (not /item/{id}) with full item object
+        const response = await fetchWithSession('http://localhost:8080/item', {
             method: 'PUT',
             body: JSON.stringify({
+                id: itemId,
                 name: name,
                 price: price,
-                totalNumber: stock
+                totalNumber: stock,
+                isDeleted: existingItem.isDeleted || false,
+                userId: existingItem.userId
             })
         });
 
         if (response.ok) {
             showToast('Item updated successfully', 'success');
             closeModal('updateModal');
-            loadItems(); // Refresh
+            loadItems();
         } else {
             throw new Error('Update failed');
         }
@@ -372,7 +380,7 @@ async function submitAdd() {
         if (response.ok) {
             showToast('Item added successfully', 'success');
             closeModal('addModal');
-            loadItems(); // Refresh
+            loadItems();
         } else {
             throw new Error('Add failed');
         }
@@ -391,7 +399,7 @@ function openAddDetailsModal(itemId) {
     document.getElementById('addDetailsModal').classList.add('active');
 }
 
-// Add item details.
+// Add item details
 async function submitAddDetails() {
     const itemId = document.getElementById('detailsItemId').value;
     const description = document.getElementById('addDescription').value.trim();
@@ -467,6 +475,7 @@ async function submitUpdateDetails() {
     }
 
     try {
+        // PUT to /itemdetails/{itemId}
         const response = await fetchWithSession(`http://localhost:8080/itemdetails/${itemId}`, {
             method: 'PUT',
             body: JSON.stringify({
@@ -502,7 +511,6 @@ async function submitUpdateDetails() {
 }
 
 // Delete item details
-// Delete item details
 async function deleteItemDetails(itemId) {
     if (!confirm('Are you sure you want to delete the details for this item?')) {
         return;
@@ -517,7 +525,6 @@ async function deleteItemDetails(itemId) {
             showToast('Item details deleted successfully', 'success');
             delete itemDetails[itemId];
 
-            // Refresh the details view if it's open
             const detailsContent = document.getElementById(`details-${itemId}`);
             if (detailsContent && detailsContent.classList.contains('open')) {
                 const grid = document.getElementById(`details-grid-${itemId}`);
@@ -536,6 +543,7 @@ async function deleteItemDetails(itemId) {
         showToast('Failed to delete item details', 'error');
     }
 }
+
 // Close modal
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
@@ -552,7 +560,6 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 // Logout
 function logout() {
-    // Clear session cookie
     document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = 'login.html';
 }
