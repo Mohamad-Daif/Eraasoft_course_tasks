@@ -4,7 +4,9 @@
 
 <web-app>
   <display-name>Archetype Created Web Application</display-name>
-
+  <welcome-file-list>
+    <welcome-file>login.html</welcome-file>
+  </welcome-file-list>
   <resource-ref>
     <description>PostgreSQL DataSource</description>
     <res-ref-name>jdbc/PostgresDB</res-ref-name>

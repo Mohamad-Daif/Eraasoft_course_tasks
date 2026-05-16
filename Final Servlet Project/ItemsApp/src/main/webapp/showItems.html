@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Items - ItemVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="showItem.css">
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <i class="fas fa-cube"></i>
+        <span>ItemVault</span>
+    </div>
+    <div class="nav-user">
+        <span id="usernameDisplay">User</span>
+        <button class="btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-container">
+    <div class="page-header">
+        <div class="page-title">
+            <h1>My Items</h1>
+            <p>Manage your inventory</p>
+        </div>
+        <button class="btn-add" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add Item
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalItems">0</h3>
+                <p>Total Items</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalValue">$0.00</h3>
+                <p>Total Value</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalStock">0</h3>
+                <p>Total Stock</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" id="loadingState">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading your items...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">
+            <i class="fas fa-box-open"></i>
+        </div>
+        <h3>No items yet</h3>
+        <p>Get started by adding your first item to the inventory.</p>
+    </div>
+
+    <!-- Items Grid -->
+    <div class="items-grid" id="itemsGrid" style="display: none;"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Success!</span>
+</div>
+
+<!-- Update Item Modal -->
+<div class="modal-overlay" id="updateModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Update Item</h2>
+            <button class="modal-close" onclick="closeModal('updateModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="updateItemId">
+            <div>
+                <label>Name</label>
+                <input type="text" class="modal-input" id="updateName" placeholder="Item name">
+            </div>
+            <div>
+                <label>Price</label>
+                <input type="number" class="modal-input" id="updatePrice" placeholder="0.00" step="0.01">
+            </div>
+            <div>
+                <label>Stock Quantity</label>
+                <input type="number" class="modal-input" id="updateStock" placeholder="0">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-secondary" onclick="closeModal('updateModal')">Cancel</button>
+            <button class="modal-btn modal-btn-primary" onclick="submitUpdate()">Update Item</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Add New Item</h2>
+            <button class="modal-close" onclick="closeModal('addModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div>
+                <label>Name</label>
+                <input type="text" class="modal-input" id="addName" placeholder="Item name">
+            </div>
+            <div>
+                <label>Price</label>
+                <input type="number" class="modal-input" id="addPrice" placeholder="0.00" step="0.01">
+            </div>
+            <div>
+                <label>Stock Quantity</label>
+                <input type="number" class="modal-input" id="addStock" placeholder="0">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+            <button class="modal-btn modal-btn-primary" onclick="submitAdd()">Add Item</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Details Modal -->
+<div class="modal-overlay" id="addDetailsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Add Item Details</h2>
+            <button class="modal-close" onclick="closeModal('addDetailsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="detailsItemId">
+            <div>
+                <label>Description</label>
+                <textarea class="modal-input" id="addDescription" placeholder="Item description" rows="3" style="resize: vertical;"></textarea>
+            </div>
+            <div>
+                <label>Issued At</label>
+                <input type="date" class="modal-input" id="addIssuedAt">
+            </div>
+            <div>
+                <label>Expires At</label>
+                <input type="date" class="modal-input" id="addExpiredAt">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-secondary" onclick="closeModal('addDetailsModal')">Cancel</button>
+            <button class="modal-btn modal-btn-primary" onclick="submitAddDetails()">Add Details</button>
+        </div>
+    </div>
+</div>
+
+<!-- Update Item Details Modal -->
+<div class="modal-overlay" id="updateDetailsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Update Item Details</h2>
+            <button class="modal-close" onclick="closeModal('updateDetailsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="updateDetailsItemId">
+            <div>
+                <label>Description</label>
+                <textarea class="modal-input" id="updateDescription" placeholder="Item description" rows="3" style="resize: vertical;"></textarea>
+            </div>
+            <div>
+                <label>Issued At</label>
+                <input type="date" class="modal-input" id="updateIssuedAt">
+            </div>
+            <div>
+                <label>Expires At</label>
+                <input type="date" class="modal-input" id="updateExpiredAt">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-secondary" onclick="closeModal('updateDetailsModal')">Cancel</button>
+            <button class="modal-btn modal-btn-primary" onclick="submitUpdateDetails()">Update Details</button>
+        </div>
+    </div>
+</div>
+
+<script src="showItem.js"></script>
+</body>
+</html>
