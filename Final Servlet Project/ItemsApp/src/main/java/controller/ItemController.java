@@ -151,7 +151,6 @@ public class ItemController extends HttpServlet {
 
     private void handleGetAllItemsRequestForLoggedUserWhichItemsAreNotStoredInSession(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
-        long userId = (Long) request.getSession().getAttribute(ConstantValues.USER_ID_ATTR);
         List<Item> items = itemService.getAllItem(request);
 
         response.setContentType(jsonContentType);
