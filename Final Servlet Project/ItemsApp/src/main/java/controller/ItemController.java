@@ -44,7 +44,8 @@ public class ItemController extends HttpServlet {
             itemService.addItem(req);
             resp.setStatus(HttpServletResponse.SC_OK);
         } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write(e.getMessage());
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
 
     }

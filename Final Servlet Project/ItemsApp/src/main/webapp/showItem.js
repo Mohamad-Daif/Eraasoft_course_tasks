@@ -85,21 +85,21 @@ async function loadItems() {
             throw new Error('Failed to load items');
         }
 
-        items = await response.json();
+        const allItems = await response.json();
 
-        // Filter out deleted items for display
-        const activeItems = items.filter(item => !item.isDeleted);
+        // Filter out items where isDeleted = true (only show active items)
+        items = allItems.filter(item => !item.isDeleted);
 
         loadingState.style.display = 'none';
 
-        if (activeItems.length === 0) {
+        if (items.length === 0) {
             emptyState.style.display = 'flex';
             itemsGrid.style.display = 'none';
         } else {
             emptyState.style.display = 'none';
             itemsGrid.style.display = 'grid';
-            renderItems(activeItems);
-            updateStats(activeItems);
+            renderItems(items);
+            updateStats(items);
         }
 
     } catch (err) {
@@ -144,13 +144,13 @@ function renderItems(itemsToRender) {
 
     itemsToRender.forEach(item => {
         const card = document.createElement('div');
-        card.className = `item-card ${item.isDeleted ? 'deleted' : ''}`;
+        card.className = 'item-card'; // Removed 'deleted' class since we only show active items
         card.id = `item-${item.id}`;
 
         card.innerHTML = `
             <div class="item-header">
                 <span class="item-id-badge">#${item.id}</span>
-                <div class="item-status ${item.isDeleted ? 'inactive' : ''}"></div>
+                <div class="item-status"></div>
             </div>
             <div class="item-body">
                 <div class="item-name">${escapeHtml(item.name)}</div>
@@ -255,10 +255,17 @@ function updateStats(activeItems) {
     document.getElementById('totalStock').textContent = totalStock;
 }
 
-// Delete item
+// Delete item (soft delete - just sets isDeleted flag to true)
 async function deleteItem(itemId) {
     if (!confirm('Are you sure you want to delete this item?')) {
         return;
+    }
+
+    // Disable delete button to prevent multiple clicks
+    const deleteBtn = event?.target?.closest('.btn-delete');
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
     }
 
     try {
@@ -268,26 +275,44 @@ async function deleteItem(itemId) {
 
         if (response.ok) {
             showToast('Item deleted successfully', 'success');
+
+            // Remove the item from the local items array
+            const deletedItemIndex = items.findIndex(i => i.id === itemId);
+            if (deletedItemIndex !== -1) {
+                items.splice(deletedItemIndex, 1);
+            }
+
+            // Remove the card from UI with animation
             const card = document.getElementById(`item-${itemId}`);
             if (card) {
                 card.style.transform = 'scale(0.9)';
                 card.style.opacity = '0';
                 setTimeout(() => {
                     card.remove();
-                    const activeItems = items.filter(i => i.id !== itemId && !i.isDeleted);
-                    updateStats(activeItems);
-                    if (activeItems.length === 0) {
+                    // Update stats after removal
+                    updateStats(items);
+                    // Check if no items left
+                    if (items.length === 0) {
                         document.getElementById('emptyState').style.display = 'flex';
                         document.getElementById('itemsGrid').style.display = 'none';
                     }
                 }, 300);
+            } else {
+                // If card not found, just reload items
+                loadItems();
             }
         } else {
-            throw new Error('Delete failed');
+            const errorText = await response.text();
+            showToast(errorText || 'Failed to delete item', 'error');
         }
     } catch (err) {
         console.error('Error deleting item:', err);
-        showToast('Failed to delete item', 'error');
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        }
     }
 }
 
@@ -301,6 +326,8 @@ function openUpdateModal(itemId) {
     document.getElementById('updatePrice').value = item.price;
     document.getElementById('updateStock').value = item.totalNumber;
 
+    // Clear any previous error states
+    document.getElementById('updateName').classList.remove('error');
     document.getElementById('updateModal').classList.add('active');
 }
 
@@ -322,8 +349,13 @@ async function submitUpdate() {
         return;
     }
 
+    // Disable submit button to prevent multiple submissions
+    const submitBtn = document.querySelector('#updateModal .modal-btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    submitBtn.disabled = true;
+
     try {
-        // PUT to /item (not /item/{id}) with full item object
         const response = await fetchWithSession('http://localhost:8080/item', {
             method: 'PUT',
             body: JSON.stringify({
@@ -331,7 +363,7 @@ async function submitUpdate() {
                 name: name,
                 price: price,
                 totalNumber: stock,
-                isDeleted: existingItem.isDeleted || false,
+                isDeleted: false, // Keep as active since we're updating
                 userId: existingItem.userId
             })
         });
@@ -339,13 +371,40 @@ async function submitUpdate() {
         if (response.ok) {
             showToast('Item updated successfully', 'success');
             closeModal('updateModal');
-            loadItems();
+            loadItems(); // Reload items to get updated data
+        } else if (response.status === 400) {
+            const errorText = await response.text();
+            // Check if the error is about duplicate name
+            if (errorText && errorText.includes('duplicate key value violates unique constraint "item_name_unique"')) {
+                showToast('This item name already exists! Please use a different name.', 'error');
+                // Highlight the name field to indicate error
+                const nameInput = document.getElementById('updateName');
+                nameInput.classList.add('error');
+                // Shake the input field
+                nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
+                setTimeout(() => {
+                    nameInput.style.animation = '';
+                }, 400);
+                // Remove error class on input
+                setTimeout(() => {
+                    nameInput.classList.remove('error');
+                }, 3000);
+                // Focus on the name field
+                nameInput.focus();
+            } else {
+                showToast(errorText || 'Failed to update item', 'error');
+            }
         } else {
-            throw new Error('Update failed');
+            const errorText = await response.text();
+            showToast(errorText || 'Failed to update item', 'error');
         }
     } catch (err) {
         console.error('Error updating item:', err);
-        showToast('Failed to update item', 'error');
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        // Re-enable submit button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -354,6 +413,8 @@ function openAddModal() {
     document.getElementById('addName').value = '';
     document.getElementById('addPrice').value = '';
     document.getElementById('addStock').value = '';
+    // Clear any previous error states
+    document.getElementById('addName').classList.remove('error');
     document.getElementById('addModal').classList.add('active');
 }
 
@@ -366,6 +427,12 @@ async function submitAdd() {
         showToast('Please fill all fields correctly', 'error');
         return;
     }
+
+    // Disable submit button to prevent multiple submissions
+    const submitBtn = document.querySelector('#addModal .modal-btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    submitBtn.disabled = true;
 
     try {
         const response = await fetchWithSession('http://localhost:8080/item', {
@@ -380,13 +447,40 @@ async function submitAdd() {
         if (response.ok) {
             showToast('Item added successfully', 'success');
             closeModal('addModal');
-            loadItems();
+            loadItems(); // Reload items to show the new item
+        } else if (response.status === 400) {
+            const errorText = await response.text();
+            // Check if the error is about duplicate name
+            if (errorText && errorText.includes('duplicate key value violates unique constraint "item_name_unique"')) {
+                showToast('This item name already exists! Please use a different name.', 'error');
+                // Highlight the name field to indicate error
+                const nameInput = document.getElementById('addName');
+                nameInput.classList.add('error');
+                // Shake the input field
+                nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
+                setTimeout(() => {
+                    nameInput.style.animation = '';
+                }, 400);
+                // Remove error class on input
+                setTimeout(() => {
+                    nameInput.classList.remove('error');
+                }, 3000);
+                // Focus on the name field
+                nameInput.focus();
+            } else {
+                showToast(errorText || 'Failed to add item', 'error');
+            }
         } else {
-            throw new Error('Add failed');
+            const errorText = await response.text();
+            showToast(errorText || 'Failed to add item', 'error');
         }
     } catch (err) {
         console.error('Error adding item:', err);
-        showToast('Failed to add item', 'error');
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        // Re-enable submit button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -410,6 +504,12 @@ async function submitAddDetails() {
         showToast('Please fill all fields', 'error');
         return;
     }
+
+    // Disable submit button to prevent multiple submissions
+    const submitBtn = document.querySelector('#addDetailsModal .modal-btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    submitBtn.disabled = true;
 
     try {
         const response = await fetchWithSession('http://localhost:8080/itemdetails', {
@@ -438,11 +538,15 @@ async function submitAddDetails() {
                 }
             }
         } else {
-            throw new Error('Failed to add details');
+            const errorText = await response.text();
+            showToast(errorText || 'Failed to add details', 'error');
         }
     } catch (err) {
         console.error('Error adding item details:', err);
-        showToast('Failed to add item details', 'error');
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -474,6 +578,12 @@ async function submitUpdateDetails() {
         return;
     }
 
+    // Disable submit button to prevent multiple submissions
+    const submitBtn = document.querySelector('#updateDetailsModal .modal-btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    submitBtn.disabled = true;
+
     try {
         // PUT to /itemdetails/{itemId}
         const response = await fetchWithSession(`http://localhost:8080/itemdetails/${itemId}`, {
@@ -502,11 +612,15 @@ async function submitUpdateDetails() {
                 }
             }
         } else {
-            throw new Error('Failed to update details');
+            const errorText = await response.text();
+            showToast(errorText || 'Failed to update details', 'error');
         }
     } catch (err) {
         console.error('Error updating item details:', err);
-        showToast('Failed to update item details', 'error');
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -558,10 +672,48 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     });
 });
 
-// Logout
-function logout() {
-    document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    window.location.href = 'login.html';
+// Logout - Updated to call the logout endpoint
+async function logout() {
+    try {
+        const response = await fetchWithSession('http://localhost:8080/logout', {
+            method: 'GET'
+        });
+
+        if (response.ok) {
+            // Clear all session data
+            // Clear JSESSIONID cookie
+            document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+            // Clear any other session-related data
+            sessionStorage.clear();
+            localStorage.clear();
+
+            // Reset items array and details cache
+            items = [];
+            itemDetails = {};
+
+            // Show success message
+            showToast('Logged out successfully!', 'success');
+
+            // Redirect to login page after a brief delay
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        } else {
+            // Even if the response is not OK, still redirect to login
+            console.warn('Logout response not OK, still redirecting to login');
+            document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = 'login.html';
+        }
+    } catch (err) {
+        console.error('Logout error:', err);
+        // On error, still clear session and redirect
+        document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        showToast('Logged out! Redirecting...', 'info');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1000);
+    }
 }
 
 // Helpers

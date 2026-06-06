@@ -90,23 +90,9 @@ public class ItemServiceImpl implements ItemService {
 
             int itemId = Integer.parseInt(itemIdPathParam);
 
-            String deleteItemQuery = String.format(
-                    "DELETE from %s.%s where %s= ?",
-                    DBConstant.ITEM_SCHEMA_NAME,
-                    DBConstant.ITEM_TABLE_NAME,
-                    DBConstant.ID_COL
-            );
+            itemRepo.deleteItemById(itemId);
 
-            try (Connection connection = DBConfig.getConnection()) {
-
-                PreparedStatement pstmt = connection.prepareStatement(deleteItemQuery);
-                pstmt.setInt(1, itemId);
-                pstmt.executeUpdate();
-                pstmt.close();
-
-                reloadItemsStoredInSession(request);
-
-            }
+            reloadItemsStoredInSession(request);
         }
     }
 

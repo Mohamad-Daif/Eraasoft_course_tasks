@@ -78,7 +78,7 @@ public class ItemRepoImpl implements ItemRepo {
     }
 
     @Override
-    public void addItem(Item item) {
+    public void addItem(Item item) throws SQLException {
 
         try (Connection connection = DBConfig.getConnection()) {
             String addNewItemQuery = String.format(
@@ -98,8 +98,6 @@ public class ItemRepoImpl implements ItemRepo {
 
             pstmt.executeUpdate();
 
-        } catch (SQLException e) {
-            throw new InternalServerError();
         }
     }
 
@@ -134,9 +132,10 @@ public class ItemRepoImpl implements ItemRepo {
     @Override
     public void deleteItemById(long id) throws SQLException {
         String deleteItemByIdQuery = String.format(
-                "DELETE from %s.%s where %s = ?",
+                "UPDATE %s.%s SET %s = true where %s = ?",
                 ITEM_SCHEMA_NAME,
                 ITEM_TABLE_NAME,
+                IS_DELETED_COL,
                 ID_COL
         );
 

@@ -11,7 +11,7 @@ public interface ItemRepo {
     List<Item> getAllItems(long userId) throws SQLException;
     Item getItemById(long userId,long itemId);
 
-    void addItem(Item item);
+    void addItem(Item item) throws SQLException;
 
     void updateItem(Item item) throws SQLException;
 
