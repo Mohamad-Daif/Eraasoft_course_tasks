@@ -67,7 +67,7 @@ public class ItemDetailsRepoImpl implements ItemDetailsRepo {
     @Override
     public void updateItemDetail(ItemDetails itemDetail) throws SQLException {
         String updateItemDetailsQuery = String.format(
-                "UPDATE %s set %s = ?, %s = ? , %s , ? where %s = ?"
+                "UPDATE %s set %s = ?, %s = ? , %s = ? where %s = ?"
                 , ITEM_DETAILS_TABLE_NAME
                 , DESCRIPTION_COL
                 , ISSUED_AT_COL
