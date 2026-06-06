@@ -16,6 +16,26 @@
     75% { transform: translateX(5px); }
 }
 
+/* Shake animation for error feedback */
+@keyframes shakeInput {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+/* Error state for modal inputs */
+.modal-input.error {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Optional: Add success state */
+.modal-input.success {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+}
+
 body {
     font-family: 'Inter', sans-serif;
     min-height: 100vh;

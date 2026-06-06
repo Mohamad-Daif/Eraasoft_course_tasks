@@ -349,6 +349,27 @@ async function submitUpdate() {
         return;
     }
 
+    // Check if name is being changed and if it conflicts with existing items
+    const isNameChanged = name !== existingItem.name;
+    if (isNameChanged) {
+        const duplicateItem = items.find(i => i.name.toLowerCase() === name.toLowerCase() && i.id !== itemId);
+        if (duplicateItem) {
+            showToast('This item name already exists! Please use a different name.', 'error');
+            // Highlight the name field to indicate error
+            const nameInput = document.getElementById('updateName');
+            nameInput.classList.add('error');
+            nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
+            setTimeout(() => {
+                nameInput.style.animation = '';
+            }, 400);
+            setTimeout(() => {
+                nameInput.classList.remove('error');
+            }, 3000);
+            nameInput.focus();
+            return;
+        }
+    }
+
     // Disable submit button to prevent multiple submissions
     const submitBtn = document.querySelector('#updateModal .modal-btn-primary');
     const originalText = submitBtn.innerHTML;
@@ -363,7 +384,7 @@ async function submitUpdate() {
                 name: name,
                 price: price,
                 totalNumber: stock,
-                isDeleted: false, // Keep as active since we're updating
+                isDeleted: false,
                 userId: existingItem.userId
             })
         });
@@ -371,25 +392,27 @@ async function submitUpdate() {
         if (response.ok) {
             showToast('Item updated successfully', 'success');
             closeModal('updateModal');
-            loadItems(); // Reload items to get updated data
+            loadItems();
         } else if (response.status === 400) {
             const errorText = await response.text();
-            // Check if the error is about duplicate name
-            if (errorText && errorText.includes('duplicate key value violates unique constraint "item_name_unique"')) {
+            console.log('Error response:', errorText);
+
+            // Check if the error is about duplicate name (case insensitive check)
+            if (errorText && (errorText.includes('duplicate key value violates unique constraint "item_name_unique"') ||
+                errorText.includes('unique constraint') ||
+                errorText.includes('already exists'))) {
                 showToast('This item name already exists! Please use a different name.', 'error');
+
                 // Highlight the name field to indicate error
                 const nameInput = document.getElementById('updateName');
                 nameInput.classList.add('error');
-                // Shake the input field
                 nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
                 setTimeout(() => {
                     nameInput.style.animation = '';
                 }, 400);
-                // Remove error class on input
                 setTimeout(() => {
                     nameInput.classList.remove('error');
                 }, 3000);
-                // Focus on the name field
                 nameInput.focus();
             } else {
                 showToast(errorText || 'Failed to update item', 'error');
@@ -407,7 +430,6 @@ async function submitUpdate() {
         submitBtn.disabled = false;
     }
 }
-
 // Add modal
 function openAddModal() {
     document.getElementById('addName').value = '';
@@ -425,6 +447,24 @@ async function submitAdd() {
 
     if (!name || isNaN(price) || isNaN(stock)) {
         showToast('Please fill all fields correctly', 'error');
+        return;
+    }
+
+    // Check for duplicate name in existing items
+    const duplicateItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+    if (duplicateItem) {
+        showToast('This item name already exists! Please use a different name.', 'error');
+        // Highlight the name field to indicate error
+        const nameInput = document.getElementById('addName');
+        nameInput.classList.add('error');
+        nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
+        setTimeout(() => {
+            nameInput.style.animation = '';
+        }, 400);
+        setTimeout(() => {
+            nameInput.classList.remove('error');
+        }, 3000);
+        nameInput.focus();
         return;
     }
 
@@ -447,25 +487,27 @@ async function submitAdd() {
         if (response.ok) {
             showToast('Item added successfully', 'success');
             closeModal('addModal');
-            loadItems(); // Reload items to show the new item
+            loadItems();
         } else if (response.status === 400) {
             const errorText = await response.text();
+            console.log('Error response:', errorText);
+
             // Check if the error is about duplicate name
-            if (errorText && errorText.includes('duplicate key value violates unique constraint "item_name_unique"')) {
+            if (errorText && (errorText.includes('duplicate key value violates unique constraint "item_name_unique"') ||
+                errorText.includes('unique constraint') ||
+                errorText.includes('already exists'))) {
                 showToast('This item name already exists! Please use a different name.', 'error');
+
                 // Highlight the name field to indicate error
                 const nameInput = document.getElementById('addName');
                 nameInput.classList.add('error');
-                // Shake the input field
                 nameInput.style.animation = 'shakeInput 0.4s ease-in-out';
                 setTimeout(() => {
                     nameInput.style.animation = '';
                 }, 400);
-                // Remove error class on input
                 setTimeout(() => {
                     nameInput.classList.remove('error');
                 }, 3000);
-                // Focus on the name field
                 nameInput.focus();
             } else {
                 showToast(errorText || 'Failed to add item', 'error');
@@ -673,47 +715,9 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 // Logout - Updated to call the logout endpoint
-async function logout() {
-    try {
-        const response = await fetchWithSession('http://localhost:8080/logout', {
-            method: 'GET'
-        });
-
-        if (response.ok) {
-            // Clear all session data
-            // Clear JSESSIONID cookie
-            document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-            // Clear any other session-related data
-            sessionStorage.clear();
-            localStorage.clear();
-
-            // Reset items array and details cache
-            items = [];
-            itemDetails = {};
-
-            // Show success message
-            showToast('Logged out successfully!', 'success');
-
-            // Redirect to login page after a brief delay
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 1000);
-        } else {
-            // Even if the response is not OK, still redirect to login
-            console.warn('Logout response not OK, still redirecting to login');
-            document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = 'login.html';
-        }
-    } catch (err) {
-        console.error('Logout error:', err);
-        // On error, still clear session and redirect
-        document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        showToast('Logged out! Redirecting...', 'info');
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1000);
-    }
+function logout() {
+    // Direct navigation instead of fetch — browser respects Set-Cookie from this
+    window.location.href = 'http://localhost:8080/logout';
 }
 
 // Helpers
